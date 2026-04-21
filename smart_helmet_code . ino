@@ -1,0 +1,95 @@
+#include <LiquidCrystal.h>
+
+// LCD Pins: RS, EN, D4, D5, D6, D7
+LiquidCrystal lcd(7, 6, 5, 4, 3, 9);
+
+// Input Pins
+int irSensor = 2;        // IR Sensor
+int mq3Sensor = A0;      // MQ-3 Alcohol Sensor
+
+// Output Pins
+int relay = 8;           // Relay for Motor
+int buzzer = 10;
+int greenLED = 11;
+int redLED = 12;
+
+void setup() {
+
+  pinMode(irSensor, INPUT_PULLUP);
+
+  pinMode(relay, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+  pinMode(greenLED, OUTPUT);
+  pinMode(redLED, OUTPUT);
+
+  // Initial State
+  digitalWrite(relay, HIGH);   // Motor OFF (LOW Trigger Relay)
+  digitalWrite(buzzer, LOW);
+  digitalWrite(greenLED, LOW);
+  digitalWrite(redLED, HIGH);
+
+  lcd.begin(16,2);
+  lcd.setCursor(0,0);
+  lcd.print("SMART HELMET");
+  lcd.setCursor(0,1);
+  lcd.print("SYSTEM READY");
+  delay(2000);
+  lcd.clear();
+
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  int helmet = digitalRead(irSensor);   // LOW = Helmet Detected
+  int alcohol = analogRead(mq3Sensor);
+
+  Serial.print("Helmet = ");
+  Serial.print(helmet);
+  Serial.print("   Alcohol = ");
+  Serial.println(alcohol);
+
+  // SAFE CONDITION
+  if (helmet == LOW && alcohol < 500) {
+
+    digitalWrite(relay, LOW);    // Motor ON
+    digitalWrite(greenLED, HIGH);
+    digitalWrite(redLED, LOW);
+    digitalWrite(buzzer, LOW);
+
+    lcd.setCursor(0,0);
+    lcd.print("Helmet YES     ");
+    lcd.setCursor(0,1);
+    lcd.print("SAFE DRIVE     ");
+  }
+
+  // HELMET NOT WORN
+  else if (helmet == HIGH) {
+
+    digitalWrite(relay, HIGH);   // Motor OFF
+    digitalWrite(greenLED, LOW);
+    digitalWrite(redLED, HIGH);
+    digitalWrite(buzzer, LOW);
+
+    lcd.setCursor(0,0);
+    lcd.print("Wear Helmet    ");
+    lcd.setCursor(0,1);
+    lcd.print("Motor OFF      ");
+  }
+
+  // ALCOHOL DETECTED
+  else if (alcohol >= 500) {
+
+    digitalWrite(relay, HIGH);   // Motor OFF
+    digitalWrite(greenLED, LOW);
+    digitalWrite(redLED, HIGH);
+    digitalWrite(buzzer, HIGH);
+
+    lcd.setCursor(0,0);
+    lcd.print("Alcohol Found  ");
+    lcd.setCursor(0,1);
+    lcd.print("Motor OFF      ");
+  }
+
+  delay(200);
+}
